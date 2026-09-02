@@ -28,8 +28,10 @@ The application is built on a modern, decoupled architecture ensuring low latenc
 
 - **Context-Aware Dynamic Triage (Safety Guardrails)**
   - The AI dynamically calibrates numeric reference bounds based on the global **Patient Context** (e.g., "Type 2 Diabetic").
-  - **Guardrail 1**: Adjustments are clamped to a maximum of ±40% of the standard clinical bound to prevent hallucination.
-  - **Guardrail 2**: The boundary between `Warning` and `Critical` is strictly mathematical and fixed. The AI cannot downgrade a true physiological emergency.
+  - **Guardrail 1 (Clamp Constraint)**: Adjustments are clamped to a maximum of ±40% of the standard clinical bound to prevent hallucination.
+  - **Guardrail 2 (Fixed Criticals)**: The boundary between `Warning` and `Critical` is strictly mathematical and fixed. The AI cannot downgrade a true physiological emergency.
+  - **Guardrail 3 (Fail-Closed)**: If the calibration API call fails, times out, or returns malformed JSON due to network hiccups, the system silently and safely falls back to standard bounds rather than crashing.
+  - **Guardrail 4 (Schema Constraint)**: The system aggressively filters calibration responses, instantly rejecting any hallucinated test names that weren't in the uploaded batch.
 
 ---
 

@@ -49,8 +49,10 @@ graph TD
 1. The frontend collects **Global Patient Context** (e.g., "Type 2 Diabetic").
 2. The backend sends a strictly-typed JSON schema request to Gemini to calibrate the reference bounds specifically for that patient context.
 3. **Guardrails (`agent.py`):** 
-   - *Clamp Constraint*: The AI is mathematically forbidden from altering bounds by more than ±40% of standard ranges.
-   - *Fixed Criticals*: The boundary between `Warning` and `Critical` is hardcoded to prevent the AI from downgrading a true physiological emergency.
+   - *Guardrail 1 (Clamp Constraint)*: The AI is mathematically forbidden from altering bounds by more than ±40% of standard ranges.
+   - *Guardrail 2 (Fixed Criticals)*: The boundary between `Warning` and `Critical` is hardcoded to prevent the AI from downgrading a true physiological emergency.
+   - *Guardrail 3 (Fail-Closed)*: If the calibration API call fails, times out, or returns malformed JSON, the system intercepts the exception and silently falls back to standard bounds, guaranteeing that the row never hangs or crashes.
+   - *Guardrail 4 (Schema Constraint)*: The calibration pipeline inherently filters out hallucinated keys. If the LLM generates an adjustment for a test name that wasn't in the uploaded batch, it is immediately discarded.
 4. **Visual XAI Dual-Gauge:** Once calibrated, the backend streams a transition state. The frontend `ResultsDisplay.jsx` renders a dynamic gauge showing a dotted line for the *original* standard range, and a solid line for the *new* patient-adjusted range, flagging it explicitly with `Adjusted for patient context`.
 
 ### C. Model Context Protocol (MCP) Integration
