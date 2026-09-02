@@ -1,0 +1,14 @@
+Date,Test_Name,Result,Unit,Reference_Range,Status,Comment,Min_Reference,Max_Reference,Unit_Description,Recommended_Followup
+2025-09-02,Hemoglobin,5.2,g/dL,12-16,Critical,Severely low hemoglobin - acute anemia,12,16,Gram/Desilitre,Immediate hematology consult + transfusion evaluation
+2025-09-02,Platelet Count,18,10^3/uL,150-450,Critical,Critically low platelets - bleeding risk,150,450,Bin/µL,Emergency hematology consult - transfusion may be required
+2025-09-02,Glucose,520,mg/dL,70-99,Critical,Dangerously high blood sugar - possible diabetic ketoacidosis,70,99,Miligram/Desilitre,Emergency evaluation for DKA - immediate insulin therapy
+2025-09-02,Creatinine,8.9,mg/dL,0.6-1.2,Critical,Severely elevated creatinine - acute kidney failure,0.6,1.2,Miligram/Desilitre,Emergency nephrology consult - dialysis evaluation
+2025-09-02,Potassium,6.8,mEq/L,3.5-5.0,Critical,Critically high potassium - cardiac arrest risk,3.5,5.0,mEq/Litre,Immediate cardiac monitoring and emergency treatment
+2025-09-02,WBC,14.2,10^3/uL,4.5-11.0,Warning,Mildly elevated white blood cells - possible infection,4.5,11.0,Bin/µL,Clinical assessment for infection source - repeat CBC in 1 week
+2025-09-02,Sodium,128,mEq/L,136-145,Warning,Low sodium - mild hyponatremia,136,145,mEq/Litre,Fluid restriction and repeat electrolytes in 24-48 hours
+2025-09-02,ALT (SGPT),78,U/L,7-56,Warning,Mildly elevated liver enzymes - hepatocellular stress,7,56,Unit/Litre,Liver function panel - avoid hepatotoxic medications
+2025-09-02,Cholesterol,242,mg/dL,0-200,Warning,Elevated total cholesterol - cardiovascular risk,0,200,Miligram/Desilitre,Dietary counseling and repeat lipid panel in 3 months
+2025-09-02,TSH,6.8,mIU/L,0.4-4.0,Warning,Elevated TSH - subclinical hypothyroidism,0.4,4.0,MiliIU/Litre,Thyroid function panel and endocrinology referral
+2025-09-02,Hemoglobin A1c,5.5,%,4.0-5.7,Normal,Good long-term blood sugar control,4.0,5.7,Yüzde,Continue current diet and lifestyle
+2025-09-02,Ferritin,65,ug/L,15-150,Normal,Iron stores within normal range,15,150,Mikrogram/Litre,Routine follow-up in 12 months
+2025-09-02,Vitamin D,42,ng/mL,30-100,Normal,Adequate vitamin D levels,30,100,Nanogram/mL,Maintain current supplementation
