@@ -1,5 +1,10 @@
 # LabInsight
 
+<p align="center">
+  <img src="assets/uploadCard.png" alt="Upload Card Interface" width="600"/>
+  <img src="assets/results.png" alt="LabInsight Results Dashboard" width="600"/>
+</p>
+
 A full-stack, AI-powered Web Application designed to analyze clinical laboratory test results, classify their severity based on established reference ranges, route them by urgency and medical specialty, and generate AI-driven clinical explanations.
 
 This project strictly adheres to **Explainable AI (XAI)** principles, ensuring that clinicians understand exactly *why* a result was flagged and how any AI-driven adjustments to reference bounds were made.
@@ -110,6 +115,7 @@ We have provided a comprehensive demo file to test all advanced layers of the ar
 1. Open the frontend at `http://localhost:5173`.
 2. In the **Patient Context** box, type: `Type 2 Diabetic`
 3. Click **Upload CSV** and select `test_data/test_demo_final.csv`.
+
 
 **What you will observe during the test:**
 
