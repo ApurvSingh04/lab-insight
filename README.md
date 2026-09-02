@@ -4,9 +4,36 @@ A full-stack, AI-powered Web Application designed to analyze clinical laboratory
 
 This project strictly adheres to **Explainable AI (XAI)** principles, ensuring that clinicians understand exactly *why* a result was flagged and how any AI-driven adjustments to reference bounds were made.
 
+> 📖 **Full Technical Specs:** For a deep dive into the code flow, state management, API schemas, and component structure, please read the [Comprehensive Technical Documentation](DOCUMENTATION.md).
+
 ---
 
 ## Architecture
+
+```mermaid
+graph TD
+    A[Client UI - React] -->|1. Client-Side CSV Parse| B(Parsed Labs Array)
+    B -->|2. POST /analyze_labs_stream| C[FastAPI Backend]
+    
+    subgraph Backend Pipeline
+        C -->|3. Instant Pre-computation| G(Yield Local Classification)
+        C -->|4. Batched Fallback check| D{Missing Ref Bounds?}
+        D -- Yes --> E[MCP Server: reference_range_lookup]
+        E --> F[Inject MCP Bounds & Yield Transition]
+        
+        G --> H[Async Gemini Calibration - JSON Schema]
+        F --> H
+        H -->|5. Guardrails & Rationale Applied| I(Yield Adjusted Bounds)
+        
+        I -->|6. Priority Sort| J[Async LLM Batch Queue]
+        J --> K[Gemini 3.6 Flash Generation]
+    end
+    
+    G -. SSE Chunk .-> A
+    F -. SSE Chunk .-> A
+    I -. SSE Chunk .-> A
+    K -. SSE Chunk .-> A
+```
 
 The application is built on a modern, decoupled architecture ensuring low latency, safety, and scalability.
 
@@ -24,10 +51,11 @@ The application is built on a modern, decoupled architecture ensuring low latenc
 - **Model Context Protocol (MCP)**
   - The architecture includes a localized `mcp_server.py` built on `FastMCP`.
   - The primary `Agent` uses the official `mcp.client.stdio` transport to dynamically spawn and communicate with the MCP server over JSON-RPC. 
-  - If a lab test is missing its reference range, the Agent explicitly calls the MCP tool `reference_range_lookup` as a fallback before executing the triage math.
+  - **Batched Decoupling**: Rather than blocking the initial instant yield, the Agent instantly returns a skeleton state for all labs, then opens a single batched MCP session to resolve any missing bounds, streaming a transition event to the UI once they are found.
 
 - **Context-Aware Dynamic Triage (Safety Guardrails)**
   - The AI dynamically calibrates numeric reference bounds based on the global **Patient Context** (e.g., "Type 2 Diabetic").
+  - **Calibration Rationale (XAI)**: The LLM is forced by schema to provide a human-readable `rationale` whenever it adjusts a reference bound. This rationale is instantly streamed to the frontend before the deep clinical analysis even finishes.
   - **Guardrail 1 (Clamp Constraint)**: Adjustments are clamped to a maximum of ±40% of the standard clinical bound to prevent hallucination.
   - **Guardrail 2 (Fixed Criticals)**: The boundary between `Warning` and `Critical` is strictly mathematical and fixed. The AI cannot downgrade a true physiological emergency.
   - **Guardrail 3 (Fail-Closed)**: If the calibration API call fails, times out, or returns malformed JSON due to network hiccups, the system silently and safely falls back to standard bounds rather than crashing.
@@ -55,17 +83,11 @@ GEMINI_API_KEY=your_gemini_api_key_here
 
 ### 2. Backend Setup
 ```bash
-# Navigate to the backend directory
 cd backend
-
-# Create and activate a virtual environment (Windows)
 python -m venv venv
 .\venv\Scripts\activate
-
-# Install requirements
 pip install -r requirements.txt
 
-# Start the FastAPI server
 python main.py
 ```
 *The backend runs on `http://localhost:8000`*
@@ -73,13 +95,8 @@ python main.py
 ### 3. Frontend Setup
 Open a new terminal window:
 ```bash
-# Navigate to the frontend directory
 cd frontend
-
-# Install dependencies
 npm install
-
-# Start the Vite development server
 npm run dev
 ```
 *The frontend runs on `http://localhost:5173`*

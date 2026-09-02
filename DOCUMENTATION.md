@@ -6,31 +6,7 @@
 
 ## 1. System Architecture Overview
 
-The system is designed as a decoupled, real-time streaming architecture.
-
-```mermaid
-graph TD
-    A[Client UI - React] -->|1. Client-Side CSV Parse| B(Parsed Labs Array)
-    B -->|2. POST /analyze_labs_stream| C[FastAPI Backend]
-    
-    subgraph Backend Pipeline
-        C -->|3. Fallback check| D{Missing Ref Bounds?}
-        D -- Yes --> E[MCP Server: reference_range_lookup]
-        E --> F[Inject MCP Bounds]
-        D -- No --> F
-        
-        F -->|4. Instant Pre-computation| G(Yield Local Classification)
-        G --> H[Async Gemini Calibration - JSON Schema]
-        H -->|5. Guardrails Applied| I(Yield Adjusted Bounds)
-        
-        I -->|6. Priority Sort| J[Async LLM Batch Queue]
-        J --> K[Gemini 3.6 Flash Generation]
-    end
-    
-    G -. SSE Chunk .-> A
-    I -. SSE Chunk .-> A
-    K -. SSE Chunk .-> A
-```
+The system is designed as a decoupled, real-time streaming architecture. *(See the `README.md` for the visual architecture diagram).*
 
 ---
 
@@ -60,7 +36,8 @@ graph TD
 **Solution:** 
 We built an isolated tool-calling node using `FastMCP`.
 - **Server (`mcp_server.py`)**: Hosts local tools like `reference_range_lookup`.
-- **Client (`agent.py`)**: Uses `mcp.client.stdio` to spawn the MCP server process locally over standard input/output. If a parsed lab result lacks bounds, the Agent sends a JSON-RPC request to the MCP server to fetch the fallback bounds before passing the data to the LLM.
+- **Client (`agent.py`)**: Uses `mcp.client.stdio` to spawn the MCP server process locally over standard input/output.
+- **Batched Execution**: To prevent the MCP connection from bottlenecking the initial UI render, the Agent instantly yields a skeleton state for all labs in the batch *first*, and only then opens a single MCP session to resolve any missing bounds. Once resolved, it streams a transition event back to the UI.
 
 ### D. Priority Routing & Urgency
 The `Agent` mathematically pre-classifies all incoming results. Before entering the async LLM queue, the list is aggressively sorted:

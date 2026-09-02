@@ -48,6 +48,7 @@ class AdjustedBound(BaseModel):
     test_name: str
     min_reference: Optional[float] = None
     max_reference: Optional[float] = None
+    rationale: Optional[str] = None
 
 class CalibrationResponse(BaseModel):
     adjustments: List[AdjustedBound]
@@ -65,20 +66,7 @@ class Agent:
             self.client = get_gemini_client()
         return self.client
 
-    async def get_reference_range_via_mcp(self, test_name: str) -> Optional[Dict]:
-        """Calls the MCP server to lookup reference ranges if missing."""
-        try:
-            async with stdio_client(self._mcp_server_params) as (read, write):
-                async with ClientSession(read, write) as session:
-                    await session.initialize()
-                    result = await session.call_tool("reference_range_lookup", arguments={"test_name": test_name})
-                    if result.content and len(result.content) > 0:
-                        data = json.loads(result.content[0].text)
-                        if "error" not in data:
-                            return data
-        except Exception as e:
-            print(f"MCP Error for {test_name}: {e}")
-        return None
+
 
     async def calibrate_thresholds(self, labs: List[LabResult], patient_context: str) -> Dict[str, AdjustedBound]:
         """Ask LLM to safely adjust numeric reference bounds based on patient context."""
@@ -90,7 +78,7 @@ class Agent:
             return {}
             
         prompt = f"Patient Context: {patient_context}\n"
-        prompt += "Based on this patient context, should any of these standard reference ranges be adjusted? Return a JSON array of adjustments.\n"
+        prompt += "Based on this patient context, should any of these standard reference ranges be adjusted? Return a JSON array of adjustments. Each adjustment must include a 'rationale' explaining why the bound was moved.\n"
         prompt += "Tests:\n"
         for l in valid_labs:
             prompt += f"- {l.test_name} (Current range: {l.min_reference} - {l.max_reference} {l.unit})\n"
@@ -234,17 +222,7 @@ class LabQueue:
         self.agent = agent
 
     async def process_stream(self, labs: List[LabResult], patient_context: str = ""):
-        # 0. MCP Fallback for missing references
-        for lab in labs:
-            if lab.min_reference is None:
-                mcp_data = await self.agent.get_reference_range_via_mcp(lab.test_name)
-                if mcp_data:
-                    lab.min_reference = mcp_data["min"]
-                    lab.max_reference = mcp_data["max"]
-                    if not lab.unit:
-                        lab.unit = mcp_data["unit"]
-
-        # 1. Instant Yield (Standard Bounds)
+        # 1. True Instant Yield (Standard Bounds)
         for lab in labs:
             local_sev = self.agent.classify_locally(lab)
             instant_result = AnalyzedResult(
@@ -258,6 +236,37 @@ class LabQueue:
                 instant_result.status = "done"
                 instant_result.explanation = "Data Error: Value is physiologically impossible (e.g., negative concentration) or missing."
             yield instant_result
+
+        # 2. MCP Fallback for missing references (Single Session)
+        labs_missing = [l for l in labs if l.min_reference is None and l.result and float(l.result) >= 0]
+        if labs_missing:
+            try:
+                from mcp.client.stdio import stdio_client
+                from mcp import ClientSession
+                async with stdio_client(self.agent._mcp_server_params) as (read, write):
+                    async with ClientSession(read, write) as session:
+                        await session.initialize()
+                        for lab in labs_missing:
+                            result = await session.call_tool("reference_range_lookup", arguments={"test_name": lab.test_name})
+                            if result.content and len(result.content) > 0:
+                                data = json.loads(result.content[0].text)
+                                if "error" not in data:
+                                    lab.min_reference = data["min"]
+                                    lab.max_reference = data["max"]
+                                    if not lab.unit:
+                                        lab.unit = data["unit"]
+                                    
+                                    # Yield transition event
+                                    new_sev = self.agent.classify_locally(lab)
+                                    yield AnalyzedResult(
+                                        test_name=lab.test_name, result=lab.result, unit=lab.unit,
+                                        severity=new_sev, explanation="Fetched reference range from MCP...",
+                                        next_steps="...", status="processing_llm", range_source="standard",
+                                        min_reference=lab.min_reference, max_reference=lab.max_reference,
+                                        urgency="...", routing_specialty="..."
+                                    )
+            except Exception as e:
+                print(f"MCP Batch Error: {e}")
 
         valid_labs = [l for l in labs if self.agent.classify_locally(l) != "data_error"]
         if not valid_labs:
@@ -275,7 +284,7 @@ class LabQueue:
                     safe_max = lab_obj.max_reference * 1.4
                     final_min = max(safe_min, adj.get("min_reference") or lab_obj.min_reference)
                     final_max = min(safe_max, adj.get("max_reference") or lab_obj.max_reference)
-                    calibrations[t_name] = {"min": final_min, "max": final_max}
+                    calibrations[t_name] = {"min": final_min, "max": final_max, "rationale": adj.get("rationale", "Calibrating ranges for patient context...")}
 
         # 3. Yield Transition Animation events
         for lab in valid_labs:
@@ -287,7 +296,7 @@ class LabQueue:
                 transition_res = AnalyzedResult(
                     test_name=lab.test_name, result=lab.result, unit=lab.unit,
                     severity=new_sev, original_severity=old_sev if old_sev != new_sev else None,
-                    explanation="Calibrating ranges for patient context...",
+                    explanation=f"Calibration: {calib.get('rationale')}",
                     next_steps="...", status="processing_llm", range_source="patient_adjusted",
                     patient_context=patient_context,
                     min_reference=adj_min, max_reference=adj_max,
