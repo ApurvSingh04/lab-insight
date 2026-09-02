@@ -1,10 +1,10 @@
-Date,Test_Name,Result,Unit,Reference_Range,Status,Comment,Min_Reference,Max_Reference,Unit_Description,Recommended_Followup
-2025-08-12,Lökosit (Strip),Negatif,Leu/uL,Negatif,Normal,Lökosit yok,,,Lökosit/µL,Takip gerekmez
-2025-08-12,Keton (Strip),Negatif,mg/dL,Negatif,Normal,Ketoz yok,,,Miligram/Desilitre,Takip gerekmez
-2025-08-12,Glukoz (Strip),Negatif,mg/dL,Negatif,Normal,Şeker yok,,,Miligram/Desilitre,Takip gerekmez
-2025-08-12,Eritrosit (Strip),1+,-,Negatif,Yüksek,"İdrarda eritrosit var, kontrol önerilir",,,-,Tekrar idrar tahlili önerilir
-2025-08-12,Dansite (Strip),1.02,-,1.010-1.030,Normal,Dansite normal,1.010,1.030,-,Takip gerekmez
-2025-08-12,Bilirubin (Strip),Negatif,mg/dL,Negatif,Normal,Safra pigmenti yok,,,Miligram/Desilitre,Takip gerekmez
-2025-08-12,Trombosit,267,10^3/uL,150-450,Normal,Pıhtılaşma hücreleri normal,150,450,Bin/µL,Rutin kontrol
-2025-08-12,Lökosit,6.37,10^3/uL,5-10.6,Normal,Bağışıklık hücreleri normal,5,10.6,Bin/µL,Rutin kontrol
-2025-08-12,Hemoglobin,12.9,g/dL,12-15,Normal,Anemi yok,12,15,Gram/Desilitre,Rutin kontrol
+﻿Date,Test_Name,Result,Unit,Reference_Range,Status,Comment,Min_Reference,Max_Reference,Unit_Description,Recommended_Followup
+2025-08-12,LÃ¶kosit (Strip),Negative,Leu/uL,Negative,Normal,LÃ¶kosit yok,,,LÃ¶kosit/ÂµL,No follow-up required
+2025-08-12,Ketone (Strip),Negative,mg/dL,Negative,Normal,No ketosis,,,MiliGrams/Deciliter,No follow-up required
+2025-08-12,Glucose (Strip),Negative,mg/dL,Negative,Normal,Åžeker yok,,,MiliGrams/Deciliter,No follow-up required
+2025-08-12,Erythrocytes (RBC) (Strip),1+,-,Negative,YÃ¼ksek,"Ä°drarda Erythrocytes (RBC) var, kontrol Ã¶nerilir",,,-,Tekrar idrar tahlili Ã¶nerilir
+2025-08-12,Density (Strip),1.02,-,1.010-1.030,Normal,Density Normal,1.010,1.030,-,No follow-up required
+2025-08-12,Bilirubin (Strip),Negative,mg/dL,Negative,Normal,No bile pigment,,,MiliGrams/Deciliter,No follow-up required
+2025-08-12,Platelet Count,267,10^3/uL,150-450,Normal,PÄ±htÄ±laÅŸma hÃ¼creleri Normal,150,450,Bin/ÂµL,Routine checkup
+2025-08-12,LÃ¶kosit,6.37,10^3/uL,5-10.6,Normal,BaÄŸÄ±ÅŸÄ±klÄ±k hÃ¼creleri Normal,5,10.6,Bin/ÂµL,Routine checkup
+2025-08-12,Hemoglobin,12.9,g/dL,12-15,Normal,No anemia,12,15,Grams/Deciliter,Routine checkup

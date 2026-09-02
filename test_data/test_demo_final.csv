@@ -1,0 +1,4 @@
+Date,Test_Name,Result,Unit,Reference_Range,Status,Comment,Min_Reference,Max_Reference,Unit_Description,Recommended_Followup
+2025-09-02,Glucose,125,mg/dL,70-99,Warning,Elevated glucose levels,70,99,Milligrams/Deciliter,Dietary review
+2025-09-02,Hemoglobin,10.5,,,,,,,,,
+2025-09-02,Potassium,6.8,mEq/L,3.5-5.0,Critical,Critically high potassium,3.5,5.0,mEq/Litre,Emergency

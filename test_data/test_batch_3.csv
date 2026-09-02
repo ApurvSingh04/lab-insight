@@ -1,10 +1,10 @@
-Date,Test_Name,Result,Unit,Reference_Range,Status,Comment,Min_Reference,Max_Reference,Unit_Description,Recommended_Followup
-2025-08-12,Eritrosit,4.55,10^6/uL,3.8-5.2,Normal,Kırmızı kan hücreleri normal,3.8,5.2,Milyon/µL,Rutin kontrol
-2025-08-12,RDW-SD,39.3,fL,36.4-46.3,Normal,Eritrosit dağılım genişliği normal,36.4,46.3,Femtolitre,Rutin kontrol
-2025-08-12,RDW,12.2,%,11.5-14.5,Normal,Eritrosit dağılım oranı normal,11.5,14.5,Yüzde,Rutin kontrol
-2025-08-12,PDW,11.7,fL,9.8-16.1,Normal,Trombosit dağılımı normal,9.8,16.1,Femtolitre,Rutin kontrol
-2025-08-12,PCT,0.27,%,0.17-0.38,Normal,Trombosit hacim oranı normal,0.17,0.38,Yüzde,Rutin kontrol
-2025-08-12,Nötrofil%,68.9,%,50-70,Normal,Nötrofil yüzdesi normal,50,70,Yüzde,Rutin kontrol
-2025-08-12,Monosit%,6.1,%,2-11,Normal,Monosit yüzdesi normal,2,11,Yüzde,Rutin kontrol
-2025-08-12,Lenfosit%,23.1,%,18-42,Normal,Lenfosit yüzdesi normal,18,42,Yüzde,Rutin kontrol
-2025-08-12,Hematokrit,40,%,35-49,Normal,Hematokrit değeri normal,35,49,Yüzde,Rutin kontrol
+﻿Date,Test_Name,Result,Unit,Reference_Range,Status,Comment,Min_Reference,Max_Reference,Unit_Description,Recommended_Followup
+2025-08-12,Erythrocytes (RBC),4.55,10^6/uL,3.8-5.2,Normal,KÄ±rmÄ±zÄ± kan hÃ¼creleri Normal,3.8,5.2,Milyon/ÂµL,Routine checkup
+2025-08-12,RDW-SD,39.3,fL,36.4-46.3,Normal,Erythrocytes (RBC) daÄŸÄ±lÄ±m geniÅŸliÄŸi Normal,36.4,46.3,Femtoliter,Routine checkup
+2025-08-12,RDW,12.2,%,11.5-14.5,Normal,Erythrocytes (RBC) daÄŸÄ±lÄ±m oranÄ± Normal,11.5,14.5,YÃ¼zde,Routine checkup
+2025-08-12,PDW,11.7,fL,9.8-16.1,Normal,Platelet Count daÄŸÄ±lÄ±mÄ± Normal,9.8,16.1,Femtoliter,Routine checkup
+2025-08-12,PCT,0.27,%,0.17-0.38,Normal,Platelet Count hacim oranÄ± Normal,0.17,0.38,YÃ¼zde,Routine checkup
+2025-08-12,NÃ¶trofil%,68.9,%,50-70,Normal,NÃ¶trofil yÃ¼zdesi Normal,50,70,YÃ¼zde,Routine checkup
+2025-08-12,Monocytes %,6.1,%,2-11,Normal,Monosit yÃ¼zdesi Normal,2,11,YÃ¼zde,Routine checkup
+2025-08-12,Lymphocytes %,23.1,%,18-42,Normal,Lenfosit yÃ¼zdesi Normal,18,42,YÃ¼zde,Routine checkup
+2025-08-12,Hematocrit,40,%,35-49,Normal,Hematocrit deÄŸeri Normal,35,49,YÃ¼zde,Routine checkup

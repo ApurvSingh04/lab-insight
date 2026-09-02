@@ -1,10 +1,10 @@
-Date,Test_Name,Result,Unit,Reference_Range,Status,Comment,Min_Reference,Max_Reference,Unit_Description,Recommended_Followup
-2025-08-12,Ferritin,28.9,ug/L,15-150,Normal,Demir depoları alt-orta seviyede,15,150,Mikrogram/Litre,Demir açısından zengin beslenme
-2025-08-12,Glikozile Hemoglobin (HbA1c),5.0,%,4.0-6.0,Normal,Kan şekeri uzun dönem ortalaması iyi,4.0,6.0,Yüzde,Mevcut düzeni koruma
-2025-08-12,Total IgE,1.73,KU/L,0.1-100,Normal,Alerji riski düşük,0.1,100,KiloÜnite/Litre,Takip gerekmez
-2025-08-12,İnsülin,9.42,mU/L,2.6-24.9,Normal,İnsülin normal,2.6,24.9,MiliÜnite/Litre,Mevcut düzeni koruma
-2025-08-12,Serbest T4,1.14,ng/dL,0.87-1.70,Normal,Tiroid fonksiyonu normal,0.87,1.70,Nanogram/Desilitre,Rutin kontrol
-2025-08-12,Ürobilinojen (Strip),Normal,mg/dL,Normal,Normal,Karaciğer fonksiyonu normal,,,Miligram/Desilitre,Takip gerekmez
-2025-08-12,Protein (Strip),Negatif,mg/dL,Negatif,Normal,Protein kaçağı yok,,,Miligram/Desilitre,Takip gerekmez
-2025-08-12,pH (Strip),6,-,5-9,Normal,pH normal,5,9,pH değeri,Takip gerekmez
-2025-08-12,Nitrit (Strip),Negatif,-,Negatif,Normal,İdrarda nitrit yok,,,-,Takip gerekmez
+﻿Date,Test_Name,Result,Unit,Reference_Range,Status,Comment,Min_Reference,Max_Reference,Unit_Description,Recommended_Followup
+2025-08-12,Ferritin,28.9,ug/L,15-150,Normal,Demir depolarÄ± alt-orta seviyede,15,150,Micrograms/Liter,Demir aÃ§Ä±sÄ±ndan zengin beslenme
+2025-08-12,Glycosylated Hemoglobin (HbA1c),5.0,%,4.0-6.0,Normal,Kan ÅŸekeri uzun dÃ¶nem ortalamasÄ± iyi,4.0,6.0,YÃ¼zde,Mevcut dÃ¼zeni koruma
+2025-08-12,Total IgE,1.73,KU/L,0.1-100,Normal,Alerji riski dÃ¼ÅŸÃ¼k,0.1,100,KiloÃœnite/Litre,No follow-up required
+2025-08-12,Ä°nsÃ¼lin,9.42,mU/L,2.6-24.9,Normal,Ä°nsÃ¼lin Normal,2.6,24.9,MiliÃœnite/Litre,Mevcut dÃ¼zeni koruma
+2025-08-12,Free T4,1.14,ng/dL,0.87-1.70,Normal,Thyroid function Normal,0.87,1.70,NanoGrams/Deciliter,Routine checkup
+2025-08-12,Ãœrobilinojen (Strip),Normal,mg/dL,Normal,Normal,KaraciÄŸer fonksiyonu Normal,,,MiliGrams/Deciliter,No follow-up required
+2025-08-12,Protein (Strip),Negative,mg/dL,Negative,Normal,Protein kaÃ§aÄŸÄ± yok,,,MiliGrams/Deciliter,No follow-up required
+2025-08-12,pH (Strip),6,-,5-9,Normal,pH Normal,5,9,pH deÄŸeri,No follow-up required
+2025-08-12,Nitrite (Strip),Negative,-,Negative,Normal,Ä°drarda nitrit yok,,,-,No follow-up required

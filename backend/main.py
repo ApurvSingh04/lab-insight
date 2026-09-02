@@ -29,6 +29,7 @@ lab_queue = LabQueue(agent)
 
 class LabAnalysisRequest(BaseModel):
     labs: List[LabResult]
+    patient_context: str = ""
 
 
 # ── SSE streaming endpoint ──────────────────────────────────────────────────
@@ -44,7 +45,7 @@ async def analyze_labs_stream(request: LabAnalysisRequest):
 
     async def event_generator():
         try:
-            async for result in lab_queue.process_stream(request.labs):
+            async for result in lab_queue.process_stream(request.labs, request.patient_context):
                 # Serialize each result as an SSE data event
                 data = json.dumps(result.model_dump())
                 yield f"data: {data}\n\n"
@@ -84,7 +85,10 @@ async def analyze_labs(request: LabAnalysisRequest):
     if not request.labs:
         raise HTTPException(status_code=400, detail="No lab results provided")
     try:
-        results = agent.analyze_labs(request.labs)
+        results = []
+        async for res in lab_queue.process_stream(request.labs, request.patient_context):
+            if res.status in ("done", "error"):
+                results.append(res)
         return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -135,7 +139,10 @@ async def analyze_labs_csv(file: UploadFile = File(...)):
         if not labs:
             raise HTTPException(status_code=400, detail="No valid data found in CSV")
 
-        results = agent.analyze_labs(labs)
+        results = []
+        async for res in lab_queue.process_stream(labs, ""):
+            if res.status in ("done", "error"):
+                results.append(res)
         return results
 
     except Exception as e:

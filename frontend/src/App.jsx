@@ -31,12 +31,17 @@ function labResultsReducer(state, action) {
       }));
 
     case ACTIONS.UPDATE_RESULT:
-      // Match by test_name since SSE stream returns results in order
-      let matched = false;
+      let updated = false;
       return state.map(item => {
-        if (!matched && item.status === 'pending' && item.test_name === action.payload.test_name) {
-          matched = true;
-          return { ...item, ...action.payload, status: 'done' };
+        if (!updated && item.test_name === action.payload.test_name) {
+          if (action.payload.status === 'processing_llm' && item.status === 'pending') {
+            updated = true;
+            return { ...item, ...action.payload };
+          }
+          if ((action.payload.status === 'done' || action.payload.status === 'error') && (item.status === 'pending' || item.status === 'processing_llm')) {
+            updated = true;
+            return { ...item, ...action.payload };
+          }
         }
         return item;
       });
@@ -56,6 +61,14 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [fileName, setFileName] = useState('');
   const [error, setError] = useState(null);
+  const [patientContext, setPatientContext] = useState('');
+
+  const handleClear = () => {
+    dispatch({ type: ACTIONS.RESET });
+    setFileName('');
+    setPatientContext('');
+    setError(null);
+  };
 
   const parseCSV = (file) =>
     new Promise((resolve, reject) => {
@@ -82,9 +95,10 @@ const App = () => {
       });
     });
 
-  const handleFileUpload = useCallback(async (file) => {
+  const handleFileUpload = useCallback(async (file, ctx = '') => {
     setError(null);
     setFileName(file.name);
+    setPatientContext(ctx);
     setIsLoading(true);
     dispatch({ type: ACTIONS.RESET });
 
@@ -104,7 +118,10 @@ const App = () => {
       const response = await fetch(`${API_URL}/analyze_labs_stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ labs }),
+        body: JSON.stringify({ 
+          labs,
+          patient_context: ctx
+        }),
       });
 
       if (!response.ok) {
@@ -167,7 +184,7 @@ const App = () => {
           </div>
         )}
 
-        <ResultsDisplay results={results} />
+        <ResultsDisplay results={results} patientContext={patientContext} onClear={handleClear} />
       </main>
     </div>
   );
