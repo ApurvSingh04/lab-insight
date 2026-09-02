@@ -1,186 +1,107 @@
-# Clinical Lab Results Analyzer — System Architecture & Technical Documentation
-
-> **Project Goal:** Build a full-stack, AI-powered Web Application that ingests clinical laboratory test results (CSV or manual input), classifies severity (Normal / Warning / Critical), routes results by clinical urgency and medical specialty, and presents medically accurate explanations based on **Explainable AI (XAI)** principles.
+# Comprehensive Technical Documentation
+**Project:** LabInsight  
+**Objective:** A full-stack AI platform to triage, analyze, and explain clinical lab results in real-time, strictly adhering to the principles of Explainable AI (XAI).
 
 ---
 
 ## 1. System Architecture Overview
 
-The system uses a decoupled, three-tier micro-architecture:
+The system is designed as a decoupled, real-time streaming architecture.
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                             REACT FRONTEND                                  │
-│  - Vite + React 18 (Dark-mode Glassmorphism UI)                              │
-│  - Client-Side CSV Parsing (PapaParse)                                      │
-│  - Live State Management (useReducer)                                       │
-│  - SSE Stream Reader (Fetch API + ReadableStream)                           │
-│  - Visual Explainable AI (Interactive Range Gauge & KPI Summary Bar)        │
-└──────────────────────────────────────┬──────────────────────────────────────┘
-                                       │ HTTP POST (SSE Event Stream)
-                                       ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          FASTAPI BACKEND SERVER                             │
-│  - /analyze_labs_stream (Server-Sent Events)                                │
-│  - Asyncio In-Memory Queue (LabQueue) for rate-limited rate pacing           │
-│  - Google GenAI SDK (Gemini 3.6 Flash / 2.0 Flash)                          │
-│  - Hybrid Execution: Deterministic Math + LLM Explainability                │
-└──────────────────────────────────────┬──────────────────────────────────────┘
-                                       │ Python Import / MCP Protocol
-                                       ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                            MCP SERVER (FastMCP)                             │
-│  - reference_range_lookup(test_name)                                       │
-│  - classify_result_locally(test_name, value, min, max)                      │
-│  - get_specialist_routing(test_name, severity)                              │
-│  - get_clinical_urgency(severity, test_name, deviation_pct)                 │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    A[Client UI - React] -->|1. Client-Side CSV Parse| B(Parsed Labs Array)
+    B -->|2. POST /analyze_labs_stream| C[FastAPI Backend]
+    
+    subgraph Backend Pipeline
+        C -->|3. Fallback check| D{Missing Ref Bounds?}
+        D -- Yes --> E[MCP Server: reference_range_lookup]
+        E --> F[Inject MCP Bounds]
+        D -- No --> F
+        
+        F -->|4. Instant Pre-computation| G(Yield Local Classification)
+        G --> H[Async Gemini Calibration - JSON Schema]
+        H -->|5. Guardrails Applied| I(Yield Adjusted Bounds)
+        
+        I -->|6. Priority Sort| J[Async LLM Batch Queue]
+        J --> K[Gemini 3.6 Flash Generation]
+    end
+    
+    G -. SSE Chunk .-> A
+    I -. SSE Chunk .-> A
+    K -. SSE Chunk .-> A
 ```
 
 ---
 
-## 2. Core Technical Components & Data Flow
+## 2. Core Features & Code Flow
 
-### A. Step-by-Step Execution Workflow
+### A. Real-Time SSE Streaming Pipeline
+**Problem:** Generating deep clinical LLM analysis for 10-30 lab results takes time, and cloud LLMs (like Gemini) have rate limits (e.g., 5 RPM). Serial execution freezes the UI.
+**Solution:**
+1. **Instant Feedback:** As soon as the frontend sends the POST request, the backend (`agent.py`) instantly applies deterministic math (e.g., `Result > Max_Reference`) and yields a "Pending" result over Server-Sent Events (SSE). The UI instantly renders the skeleton cards.
+2. **Batch Queueing:** The `LabQueue` groups tests into batches of 5, triggering `asyncio.gather` for parallel LLM generation, then deliberately sleeps (`asyncio.sleep`) to respect rate limits before executing the next batch.
+3. **Live UI Updates:** As each LLM response finishes, it streams to the frontend. The React Reducer intercepts the stream chunk and hot-swaps the pending card with the final explanation.
 
-1. **User Upload & Client-Side Ingestion:**
-   - The user selects a CSV file containing lab results in `LabInput.jsx`.
-   - `PapaParse` parses the file client-side instantly without blocking the network.
-   - `useReducer` initializes skeleton cards in the UI (`status: "pending"`).
-   - Top KPI counters show total test count immediately.
+### B. Context-Aware Dynamic Triage (Explainable AI)
+**Problem:** A standard reference range for Glucose (70-99) is universally applied, but for a known Diabetic patient, 125 might be perfectly acceptable. If the AI silently adjusts this, the clinician doesn't know *why*.
+**Solution:**
+1. The frontend collects **Global Patient Context** (e.g., "Type 2 Diabetic").
+2. The backend sends a strictly-typed JSON schema request to Gemini to calibrate the reference bounds specifically for that patient context.
+3. **Guardrails (`agent.py`):** 
+   - *Clamp Constraint*: The AI is mathematically forbidden from altering bounds by more than ±40% of standard ranges.
+   - *Fixed Criticals*: The boundary between `Warning` and `Critical` is hardcoded to prevent the AI from downgrading a true physiological emergency.
+4. **Visual XAI Dual-Gauge:** Once calibrated, the backend streams a transition state. The frontend `ResultsDisplay.jsx` renders a dynamic gauge showing a dotted line for the *original* standard range, and a solid line for the *new* patient-adjusted range, flagging it explicitly with `Adjusted for patient context`.
 
-2. **Backend Streaming & Rate-Paced Queueing:**
-   - The React frontend sends a single `POST /analyze_labs_stream` request with all parsed test objects.
-   - `main.py` passes the array to `LabQueue` in `agent.py`.
-   - `LabQueue` pushes items into an `asyncio.Queue` and starts an async worker loop.
-   - The worker pops one lab result at a time, processes it, waits `RATE_LIMIT_DELAY_SECONDS` (13s for Gemini free tier rate limit of 5 req/min), and streams the result back as a Server-Sent Event (SSE data chunk).
+### C. Model Context Protocol (MCP) Integration
+**Problem:** Datasets often have missing reference ranges.
+**Solution:** 
+We built an isolated tool-calling node using `FastMCP`.
+- **Server (`mcp_server.py`)**: Hosts local tools like `reference_range_lookup`.
+- **Client (`agent.py`)**: Uses `mcp.client.stdio` to spawn the MCP server process locally over standard input/output. If a parsed lab result lacks bounds, the Agent sends a JSON-RPC request to the MCP server to fetch the fallback bounds before passing the data to the LLM.
 
-3. **Hybrid Agent Analysis Pipeline (`Agent.analyze_single`):**
-   - **Step 1 — Context Enrichment:** Compiles test value, units, reference bounds (`Min_Reference`, `Max_Reference`), and original dataset comments.
-   - **Step 2 — Deterministic Pre-Classification (MCP):** Calls `classify_result_locally()` to perform exact numeric deviation calculations ($ deviation = \frac{|val - bound|}{bound} \times 100$).
-   - **Step 3 — LLM Explanation Generation:** Invokes Google Gemini via `google-genai` SDK with strict JSON schema constraints to generate a 2-3 sentence XAI clinical explanation and recommended next steps.
-   - **Step 4 — Specialist Routing (MCP):** Calls `get_specialist_routing()` to assign medical specialty (e.g., Hematology, Nephrology, Endocrinology, Hepatology, Cardiology).
-   - **Step 5 — Clinical Urgency Assessment (MCP):** Calls `get_clinical_urgency()` to assign urgency codes (`STAT`, `EMERGENCY`, `URGENT`, `ROUTINE`) and action timeframes (`1 hour`, `24 hours`, etc.).
+### D. Priority Routing & Urgency
+The `Agent` mathematically pre-classifies all incoming results. Before entering the async LLM queue, the list is aggressively sorted:
+1. `Critical` tests are placed at the front of the queue.
+2. `Warning` tests are placed next.
+3. `Normal` tests are placed last.
 
-4. **Real-time Frontend UI Update:**
-   - As each SSE data chunk arrives, `App.jsx` dispatches `UPDATE_RESULT`.
-   - The pending skeleton card transitions to a full result card.
-   - The top KPI counters (`Critical`, `Warning`, `Normal`) increment live.
-   - The top progress bar updates (`X / N complete`).
-   - The visual **Range Gauge** renders the exact position of the test value relative to the normal range segment.
-
----
-
-## 3. Explainable AI (XAI) Design Principles
-
-To ensure transparency and clinical trust, the application strictly avoids "black-box" outputs:
-
-1. **Visual Deviation Gauge:** Every test card renders a visual scale where the normal reference interval is highlighted in green. A crisp white indicator dot shows the patient's value on the scale, making out-of-bounds deviation visually obvious.
-2. **Explicit Reference Bounds:** Shows minimum, maximum, unit, and deviation percentage.
-3. **Medical Rationale in Explanations:** Gemini is prompted to explicitly state *why* a result was flagged, what physiological system is affected, and what clinical risk it presents.
-4. **Actionable Next Steps:** Gives concrete recommendations (e.g., "Emergency nephrology consult for acute kidney failure evaluation") rather than generic advice.
+During the final LLM generation, Gemini is prompted via JSON schema to output:
+- **Urgency**: `STAT`, `URGENT`, or `ROUTINE`.
+- **Routing Specialty**: E.g., `Hematology`, `Cardiology`.
+These tags are rendered natively on the UI cards alongside a dynamic deviation percentage (e.g., `+26.3%`).
 
 ---
 
-## 4. Model Context Protocol (MCP) Integration
-
-The project includes an explicit **MCP Server** built with `FastMCP` (`mcp_server.py`), exposing four specialized tools:
-
-```python
-# Available MCP Tools:
-
-1. reference_range_lookup(test_name: str) -> str
-   Returns min, max, and unit for standard clinical lab tests.
-
-2. classify_result_locally(test_name: str, value: str, min_ref: float, max_ref: float) -> str
-   Performs pure numeric threshold checking without LLM overhead.
-
-3. get_specialist_routing(test_name: str, severity: str) -> str
-   Maps test categories to medical specialties (Hematology, Endocrinology, etc.).
-
-4. get_clinical_urgency(severity: str, test_name: str, deviation_pct: float) -> str
-   Provides triage urgency (STAT / URGENT / ROUTINE) and response SLAs.
-```
-
----
-
-## 5. Technology Stack Summary
-
-### Backend
-- **Framework:** FastAPI (Python 3.10+)
-- **Server:** Uvicorn (ASGI)
-- **AI SDK:** `google-genai` (Gemini 3.6 Flash / 2.0 Flash)
-- **MCP Framework:** `mcp` (FastMCP)
-- **Data Ingestion:** Pandas, Pydantic v2
-- **Environment:** `python-dotenv`
-
-### Frontend
-- **Framework:** React 18 + Vite 5
-- **State Management:** `useReducer` + React Context
-- **CSV Ingestion:** `PapaParse`
-- **Icons:** `lucide-react`
-- **Styling:** Vanilla CSS (Glassmorphism, CSS Variables, Keyframe Animations)
-- **HTTP/Streaming:** Fetch API + ReadableStream (SSE)
-
----
-
-## 6. Directory & File Structure
-
-```
-clinical-lab-result-analyzer/
-├── backend/
-│   ├── main.py              # FastAPI application, endpoints (/analyze_labs_stream, etc.)
-│   ├── agent.py             # Agent pipeline, LabQueue async processing, Gemini integration
-│   ├── mcp_server.py        # FastMCP tools (Reference ranges, Routing, Urgency)
-│   ├── diagnose.py          # Environment & API key diagnostic utility
-│   └── requirements.txt     # Backend Python dependencies
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── LabInput.jsx         # CSV upload dropzone & file picker
-│   │   │   ├── ResultsDisplay.jsx   # Stacked card layout, Range Gauge, KPI counters
-│   │   │   └── SeverityBadge.jsx    # Severity status badges
-│   │   ├── App.jsx                  # Main application state & SSE stream handler
-│   │   ├── index.css                # Glassmorphism design system & component styles
-│   │   └── main.jsx                 # React root entry point
-│   ├── package.json                 # Frontend dependencies
-│   └── vite.config.js               # Vite build configuration
-├── test_data/
-│   ├── test_data.csv                # Full Kaggle dataset (28 rows)
-│   ├── test_batch_1.csv             # Batch 1 (9 rows)
-│   ├── test_batch_2.csv             # Batch 2 (9 rows)
-│   ├── test_batch_3.csv             # Batch 3 (9 rows)
-│   └── test_synthetic_all_severities.csv # Synthetic test set (Critical, Warning, Normal)
-└── DOCUMENTATION.md                # System documentation specification
-```
-
----
-
-## 7. API Specification
+## 3. API Documentation
 
 ### `POST /analyze_labs_stream`
-- **Request Body:** `{ "labs": [ { "test_name": str, "result": str, "unit": str, "reference_range": str, "min_reference": float, "max_reference": float } ] }`
-- **Response:** `text/event-stream`
-- **Stream Event Format:** `data: {"test_name": "...", "result": "...", "severity": "Critical", "explanation": "...", "next_steps": "...", "specialist": "Hematology", "urgency_label": "STAT"}`
+Used by the React frontend. Accepts an array of labs and streams `AnalyzedResult` JSON objects back to the client continuously via Server-Sent Events (SSE).
+
+**Payload Requirements:**
+```json
+{
+  "labs": [
+    {
+      "test_name": "Glucose",
+      "result": 125.0,
+      "unit": "mg/dL",
+      "min_reference": 70,
+      "max_reference": 99
+    }
+  ],
+  "patient_context": "Type 2 Diabetic"
+}
+```
+
+### `POST /analyze_labs`
+Used for automated grading / legacy API consumers. Accepts the exact same payload but blocks the connection until the entire queue finishes processing, returning a single flat JSON array of results.
 
 ---
 
-## 8. Deployment & Running Instructions
+## 4. Frontend Component Structure
 
-### Backend Setup
-```bash
-cd backend
-python -m venv ../venv
-..\venv\Scripts\activate
-pip install -r requirements.txt
-python main.py
-```
-*Server runs on `http://localhost:8000`*
-
-### Frontend Setup
-```bash
-cd frontend
-npm install
-npm run dev
-```
-*Application opens on `http://localhost:5173`*
+- **`App.jsx`**: Holds the main state reducer. Intercepts the SSE stream chunk-by-chunk and dispatches `UPDATE_RESULT` actions to hot-swap React state.
+- **`LabInput.jsx`**: Handles drag-and-drop CSV uploads. Invokes `PapaParse` entirely client-side to offload processing from the server.
+- **`ResultsDisplay.jsx`**: Renders the KPI summary, the global Patient Context banner, and the list of stacked cards.
+- **`RangeGauge` (inside ResultsDisplay)**: A complex CSS-driven visual component that maps numeric values to a percentage scale `(0-100%)`. Computes math dynamically to render the marker dot, the normal green zone, the dotted original standard zone, and the deviation tooltip.

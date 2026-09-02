@@ -76,7 +76,7 @@ const LabInput = ({ onFileUpload, isLoading, fileName }) => {
 
       {fileName && (
         <p style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-          📄 {fileName}
+          {fileName}
         </p>
       )}
     </div>

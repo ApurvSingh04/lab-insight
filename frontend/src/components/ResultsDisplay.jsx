@@ -1,6 +1,6 @@
 import React from 'react';
 import SeverityBadge from './SeverityBadge';
-import { ArrowRight, Loader } from 'lucide-react';
+import { ArrowRight, Loader, User } from 'lucide-react';
 
 // ── Range Gauge ──────────────────────────────────────────────────────────────
 const RangeGauge = ({ result, unit, minRef, maxRef, origMinRef, origMaxRef, rangeSource }) => {
@@ -139,7 +139,7 @@ const ResultCard = ({ result, index }) => {
       )}
       {!isPending && result.range_source === 'patient_adjusted' && (
         <div style={{ fontSize: '0.8rem', color: 'var(--warning-text)', padding: '4px 12px', background: 'var(--warning-bg)', borderRadius: '4px', marginTop: '8px', display: 'inline-block' }}>
-          ✨ Adjusted for patient context
+          Adjusted for patient context
         </div>
       )}
 
@@ -238,7 +238,7 @@ const ResultsDisplay = ({ results, patientContext, onClear }) => {
           gap: '8px',
           alignItems: 'flex-start'
         }}>
-          <span style={{ fontSize: '1.2rem' }}>👤</span>
+          <span style={{ fontSize: '1.2rem' }}><User size={18} /></span>
           <div>
             <strong style={{ display: 'block', marginBottom: '4px', color: 'var(--text-secondary)' }}>Global Patient Context:</strong>
             {patientContext}
@@ -251,8 +251,8 @@ const ResultsDisplay = ({ results, patientContext, onClear }) => {
         <div className="progress-bar-header">
           <span>
             {done === total
-              ? '✅ Analysis complete!'
-              : `⏳ Analyzing… (rate-limited to 5 req/min)`}
+              ? 'Analysis complete!'
+              : `Analyzing… (rate-limited to 5 req/min)`}
           </span>
           <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
             {done} / {total}

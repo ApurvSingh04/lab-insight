@@ -171,7 +171,7 @@ const App = () => {
   return (
     <div className="app-container">
       <header className="header">
-        <h1>Clinical Lab Results Analyzer</h1>
+        <h1>LabInsight</h1>
         <p>AI-powered classification and explanation — results update <em>live</em> as they are analyzed.</p>
       </header>
 
